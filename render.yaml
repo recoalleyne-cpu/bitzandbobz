@@ -20,6 +20,10 @@ services:
         value: https://bitz-bobz-store-staging.vercel.app
       - key: CORS_ORIGIN_ADMIN
         value: https://bitz-bobz-admin-staging.vercel.app
+      - key: CORS_ALLOW_VERCEL_PREVIEW
+        value: true
+      - key: CORS_ALLOWED_VERCEL_PROJECTS
+        value: bitz-bobz-store,bitz-bobz-store-staging,bitz-bobz-admin,bitz-bobz-admin-staging
       - key: ADMIN_PASSWORD
         sync: false
       - key: ADMIN_JWT_SECRET
@@ -49,6 +53,10 @@ services:
       - key: CORS_ORIGIN_STORE
         sync: false
       - key: CORS_ORIGIN_ADMIN
+        sync: false
+      - key: CORS_ALLOW_VERCEL_PREVIEW
+        sync: false
+      - key: CORS_ALLOWED_VERCEL_PROJECTS
         sync: false
       - key: ADMIN_PASSWORD
         sync: false

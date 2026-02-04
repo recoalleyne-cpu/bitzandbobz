@@ -26,6 +26,19 @@ const adminDailySummaryEmail = process.env.ADMIN_DAILY_SUMMARY_EMAIL || "ops@bit
 
 app.use(express.json());
 
+function parseCsvEnv(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function isTruthy(value: string | undefined): boolean {
+  if (!value) return false;
+  return ["1", "true", "yes", "y", "on"].includes(value.toLowerCase());
+}
+
 const allowedOrigins = new Set(
   [
     "http://localhost:5173",
@@ -33,15 +46,43 @@ const allowedOrigins = new Set(
     "http://localhost:5174",
     "http://127.0.0.1:5174",
     process.env.CORS_ORIGIN_STORE,
-    process.env.CORS_ORIGIN_ADMIN
+    process.env.CORS_ORIGIN_ADMIN,
+    ...parseCsvEnv(process.env.CORS_ORIGINS),
   ].filter((origin): origin is string => Boolean(origin))
 );
+
+const allowVercelPreviewOrigins =
+  isTruthy(process.env.CORS_ALLOW_VERCEL_PREVIEW) ||
+  parseCsvEnv(process.env.CORS_ALLOWED_VERCEL_PROJECTS).length > 0;
+
+const allowedVercelProjects = parseCsvEnv(process.env.CORS_ALLOWED_VERCEL_PROJECTS).map((project) => project.toLowerCase());
 
 app.use(cors({
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     if (!origin || allowedOrigins.has(origin)) {
       callback(null, true);
       return;
+    }
+
+    if (allowVercelPreviewOrigins) {
+      try {
+        const parsed = new URL(origin);
+        const hostname = parsed.hostname.toLowerCase();
+        if (parsed.protocol === "https:" && hostname.endsWith(".vercel.app")) {
+          if (allowedVercelProjects.length === 0) {
+            callback(null, true);
+            return;
+          }
+          for (const project of allowedVercelProjects) {
+            if (hostname === `${project}.vercel.app` || hostname.startsWith(`${project}-`)) {
+              callback(null, true);
+              return;
+            }
+          }
+        }
+      } catch {
+        // ignore invalid origins
+      }
     }
     callback(new Error("Not allowed by CORS"));
   }

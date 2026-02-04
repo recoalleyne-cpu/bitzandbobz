@@ -39,6 +39,21 @@ type CheckoutForm = {
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:4000').replace(/\/+$/, '')
 const SESSION_KEY = 'bb_store_session_id'
 const CART_KEY = 'bb_store_cart'
+
+function apiUnreachableMessage(): string {
+  return `Can't reach the API at ${API_BASE}. Please try again shortly.`
+}
+
+function isNetworkFailure(error: unknown): boolean {
+  return error instanceof TypeError
+}
+
+function toUserFacingError(error: unknown): string {
+  if (isNetworkFailure(error)) return apiUnreachableMessage()
+  if (error instanceof Error) return error.message
+  return 'Request failed.'
+}
+
 function categoryLabel(value: string): string {
   return value
     .split('_')
@@ -92,6 +107,7 @@ function App() {
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [status, setStatus] = useState<string>('Loading products...')
+  const [apiUnreachable, setApiUnreachable] = useState(false)
   const [checkoutMessage, setCheckoutMessage] = useState<string>('')
   const [quote, setQuote] = useState<{ subtotalCents: number; shippingCents: number; totalCents: number } | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -135,7 +151,9 @@ function App() {
           setCategories(data as Category[])
         }
       })
-      .catch(() => undefined)
+      .catch((error) => {
+        if (isNetworkFailure(error)) setApiUnreachable(true)
+      })
   }, [])
 
   async function loadCatalog() {
@@ -149,9 +167,11 @@ function App() {
       if (!response.ok) throw new Error(await parseErrorMessage(response))
       const data = (await response.json()) as Product[]
       setCatalog(data)
+      setApiUnreachable(false)
       setStatus('Live catalog ready.')
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Could not load products.')
+      setApiUnreachable(isNetworkFailure(error))
+      setStatus(toUserFacingError(error))
     }
   }
 
@@ -180,10 +200,12 @@ function App() {
       setRelatedProducts(data.related)
       const gallery = [data.product.imageUrl, ...(data.product.imageUrls || [])].filter(Boolean) as string[]
       setSelectedImage(gallery[0] || null)
+      setApiUnreachable(false)
       setStatus('Product detail loaded.')
       void trackEvent('view_product', { productId: data.product.id, slug: data.product.slug })
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Could not load product.')
+      setApiUnreachable(isNetworkFailure(error))
+      setStatus(toUserFacingError(error))
     }
   }
 
@@ -219,9 +241,11 @@ function App() {
       if (!response.ok) throw new Error(await parseErrorMessage(response))
       const data = (await response.json()) as { subtotalCents: number; shippingCents: number; totalCents: number }
       setQuote(data)
+      setApiUnreachable(false)
       setCheckoutMessage('Shipping quote ready.')
     } catch (error) {
-      setCheckoutMessage(error instanceof Error ? error.message : 'Could not quote checkout.')
+      setApiUnreachable(isNetworkFailure(error))
+      setCheckoutMessage(toUserFacingError(error))
     }
   }
 
@@ -250,8 +274,10 @@ function App() {
       setQuote(null)
       setCheckoutForm({ customerName: '', customerPhone: '', customerEmail: '', shippingAddress: '', parish: '' })
       await loadCatalog()
+      setApiUnreachable(false)
     } catch (error) {
-      setCheckoutMessage(error instanceof Error ? error.message : 'Checkout failed.')
+      setApiUnreachable(isNetworkFailure(error))
+      setCheckoutMessage(toUserFacingError(error))
     } finally {
       setSubmitting(false)
     }
@@ -275,6 +301,14 @@ function App() {
           {view === 'product' && <button type="button" className="active" onClick={() => setView('catalog')}>Back to catalog</button>}
         </nav>
         <p className="status">{status}</p>
+        {apiUnreachable && (
+          <div className="alert" role="alert" aria-live="polite">
+            <div>
+              <strong>API unreachable.</strong> {apiUnreachableMessage()}
+            </div>
+            <button type="button" onClick={() => void loadCatalog()}>Retry</button>
+          </div>
+        )}
       </header>
 
       {view === 'catalog' && (

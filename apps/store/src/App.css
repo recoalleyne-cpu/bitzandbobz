@@ -30,6 +30,23 @@
   color: #334155;
 }
 
+.alert {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #7f1d1d;
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.alert strong {
+  margin-right: 0.35rem;
+}
+
 .filters {
   display: grid;
   gap: 0.5rem;

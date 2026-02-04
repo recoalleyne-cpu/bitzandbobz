@@ -11,6 +11,12 @@
     "db:reset": "pnpm --dir apps/api prisma db push --force-reset --accept-data-loss && pnpm --dir apps/api build && pnpm --dir apps/api seed:compiled",
     "deploy:check": "node scripts/deploy/check-env.mjs",
     "deploy:staging": "node scripts/deploy/trigger-deploy.mjs staging",
-    "deploy:production": "node scripts/deploy/trigger-deploy.mjs production"
+    "deploy:production": "node scripts/deploy/trigger-deploy.mjs production",
+    "deploy:vercel:staging": "node scripts/deploy/trigger-vercel.mjs staging",
+    "deploy:vercel:production": "node scripts/deploy/trigger-vercel.mjs production",
+    "deploy:vercel:store:staging": "node scripts/deploy/trigger-vercel.mjs staging store",
+    "deploy:vercel:store:production": "node scripts/deploy/trigger-vercel.mjs production store",
+    "deploy:vercel:admin:staging": "node scripts/deploy/trigger-vercel.mjs staging admin",
+    "deploy:vercel:admin:production": "node scripts/deploy/trigger-vercel.mjs production admin"
   }
 }
