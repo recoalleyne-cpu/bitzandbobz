@@ -27,8 +27,18 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+
 async function triggerHook({ target, url }) {
-  const response = await fetch(url, { method: "POST" });
+  const response = await fetch(hookUrl, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    triggeredBy: "pnpm deploy script",
+  }),
+});
+;
   if (!response.ok) {
     throw new Error(`${target} hook failed: ${response.status}`);
   }
