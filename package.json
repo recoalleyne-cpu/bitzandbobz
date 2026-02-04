@@ -9,6 +9,7 @@
     "dev:admin": "pnpm --dir apps/admin dev",
     "db:up": "docker compose up -d",
     "db:reset": "pnpm --dir apps/api prisma db push --force-reset --accept-data-loss && pnpm --dir apps/api build && pnpm --dir apps/api seed:compiled",
+    "seed:niche": "pnpm --dir apps/api build && pnpm --dir apps/api seed:compiled",
     "deploy:check": "node scripts/deploy/check-env.mjs",
     "deploy:staging": "node scripts/deploy/trigger-deploy.mjs staging",
     "deploy:production": "node scripts/deploy/trigger-deploy.mjs production",

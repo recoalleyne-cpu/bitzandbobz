@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
+import { brand } from '@bitz/config/brand'
+import { catalogCategories, getCatalogCategoryLabel, type CatalogCategoryId } from '@bitz/config/categories'
+import { currency, formatMoney } from '@bitz/config/currency'
+import { getDefaultShippingCountry } from '@bitz/config/shipping'
 import './App.css'
 
-type Category =
-  | 'CAR_ACCESSORIES'
-  | 'DIY_TOOLS_GADGETS'
-  | 'MENS_ACCESSORIES'
-  | 'PHONE_ACCESSORIES'
-  | 'SPECIAL'
-  | 'WOMENS_ACCESSORIES'
+type Category = CatalogCategoryId
 
 type Product = {
   id: string
@@ -15,7 +13,7 @@ type Product = {
   slug: string
   description: string | null
   priceCents: number
-  currency: 'BBD'
+  currency: string
   category: Category
   imageUrl: string | null
   imageUrls: string[]
@@ -39,6 +37,7 @@ type CheckoutForm = {
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:4000').replace(/\/+$/, '')
 const SESSION_KEY = 'bb_store_session_id'
 const CART_KEY = 'bb_store_cart'
+const DEFAULT_SHIPPING_COUNTRY = getDefaultShippingCountry()
 
 function apiUnreachableMessage(): string {
   return `Can't reach the API at ${API_BASE}. Please try again shortly.`
@@ -52,20 +51,6 @@ function toUserFacingError(error: unknown): string {
   if (isNetworkFailure(error)) return apiUnreachableMessage()
   if (error instanceof Error) return error.message
   return 'Request failed.'
-}
-
-function categoryLabel(value: string): string {
-  return value
-    .split('_')
-    .map((part) => part[0] + part.slice(1).toLowerCase())
-    .join(' ')
-}
-
-function formatBbd(cents: number): string {
-  return new Intl.NumberFormat('en-BB', {
-    style: 'currency',
-    currency: 'BBD',
-  }).format(cents / 100)
 }
 
 async function parseErrorMessage(response: Response): Promise<string> {
@@ -104,7 +89,6 @@ function App() {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<Category | ''>('')
-  const [categories, setCategories] = useState<Category[]>([])
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [status, setStatus] = useState<string>('Loading products...')
   const [apiUnreachable, setApiUnreachable] = useState(false)
@@ -142,19 +126,6 @@ function App() {
   useEffect(() => {
     localStorage.setItem(CART_KEY, JSON.stringify(cart))
   }, [cart])
-
-  useEffect(() => {
-    fetch(`${API_BASE}/catalog/categories`)
-      .then((response) => response.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setCategories(data as Category[])
-        }
-      })
-      .catch((error) => {
-        if (isNetworkFailure(error)) setApiUnreachable(true)
-      })
-  }, [])
 
   async function loadCatalog() {
     setStatus('Loading products...')
@@ -232,8 +203,8 @@ function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          currency: 'BBD',
-          shippingCountry: 'Barbados',
+          currency: currency.code,
+          shippingCountry: DEFAULT_SHIPPING_COUNTRY.name,
           parish: checkoutForm.parish || null,
           items: cartItems.map((line) => ({ productId: line.product.id, quantity: line.quantity })),
         }),
@@ -261,15 +232,15 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...checkoutForm,
-          currency: 'BBD',
-          shippingCountry: 'Barbados',
+          currency: currency.code,
+          shippingCountry: DEFAULT_SHIPPING_COUNTRY.name,
           paymentMethod: 'SIMULATED_CARD',
           items: cartItems.map((line) => ({ productId: line.product.id, quantity: line.quantity })),
         }),
       })
       if (!response.ok) throw new Error(await parseErrorMessage(response))
       const data = (await response.json()) as { orderId: string; totalCents: number; paymentStatus: string }
-      setCheckoutMessage(`Order ${data.orderId} placed. Payment: ${data.paymentStatus}. Total: ${formatBbd(data.totalCents)}.`)
+      setCheckoutMessage(`Order ${data.orderId} placed. Payment: ${data.paymentStatus}. Total: ${formatMoney(data.totalCents)}.`)
       setCart({})
       setQuote(null)
       setCheckoutForm({ customerName: '', customerPhone: '', customerEmail: '', shippingAddress: '', parish: '' })
@@ -293,8 +264,8 @@ function App() {
   return (
     <main className="app">
       <header className="hero">
-        <h1>Bitz Bobz</h1>
-        <p>Barbados-only e-commerce storefront in BBD.</p>
+        <h1>{brand.storeName}</h1>
+        <p>{brand.tagline}</p>
         <nav className="tabs">
           <button type="button" className={view === 'catalog' ? 'active' : ''} onClick={() => setView('catalog')}>Catalog</button>
           <button type="button" className={view === 'checkout' ? 'active' : ''} onClick={() => setView('checkout')}>Checkout ({cartItems.length})</button>
@@ -321,8 +292,8 @@ function App() {
             />
             <select value={category} onChange={(event) => applyCategoryFilter(event.target.value as Category | '')}>
               <option value="">All categories</option>
-              {categories.map((option) => (
-                <option value={option} key={option}>{categoryLabel(option)}</option>
+              {catalogCategories.map((option) => (
+                <option value={option.id} key={option.id}>{option.label}</option>
               ))}
             </select>
           </div>
@@ -332,8 +303,8 @@ function App() {
               <article className="card" key={product.id}>
                 <h2>{product.title}</h2>
                 <p>{product.description ?? 'No description yet.'}</p>
-                <p className="price">{formatBbd(product.priceCents)}</p>
-                <p className="meta">{categoryLabel(product.category)} | Stock: {product.stockQty}</p>
+                <p className="price">{formatMoney(product.priceCents)}</p>
+                <p className="meta">{getCatalogCategoryLabel(product.category)} | Stock: {product.stockQty}</p>
                 <div className="row">
                   <button type="button" onClick={() => void openProduct(product)}>View details</button>
                   <button type="button" onClick={() => addToCart(product.id)} disabled={product.stockQty === 0}>
@@ -361,8 +332,8 @@ function App() {
             </div>
           )}
           <p>{selectedProduct.description ?? 'No description yet.'}</p>
-          <p className="price">{formatBbd(selectedProduct.priceCents)}</p>
-          <p>Category: {categoryLabel(selectedProduct.category)}</p>
+          <p className="price">{formatMoney(selectedProduct.priceCents)}</p>
+          <p>Category: {getCatalogCategoryLabel(selectedProduct.category)}</p>
           <p>Variant: Standard</p>
           <p>Availability: {selectedProduct.stockQty > 0 ? `${selectedProduct.stockQty} in stock` : 'Out of stock'}</p>
           <button type="button" onClick={() => addToCart(selectedProduct.id)} disabled={selectedProduct.stockQty === 0}>
@@ -382,10 +353,10 @@ function App() {
       {view === 'checkout' && (
         <section className="checkout">
           <h2>Checkout</h2>
-          <p>Shipping country: Barbados only</p>
-          <p>Currency: BBD only</p>
+          <p>Shipping country: {DEFAULT_SHIPPING_COUNTRY.name} only</p>
+          <p>Currency: {currency.code} only</p>
           <p>Items: {cartItems.length}</p>
-          <p>Cart subtotal: {formatBbd(cartSubtotalCents)}</p>
+          <p>Cart subtotal: {formatMoney(cartSubtotalCents)}</p>
 
           <div className="grid2">
             <div>
@@ -405,14 +376,14 @@ function App() {
               <ul>
                 {cartItems.map((line) => (
                   <li key={line.product.id}>
-                    {line.product.title} x {line.quantity} ({formatBbd(line.product.priceCents * line.quantity)}){' '}
+                    {line.product.title} x {line.quantity} ({formatMoney(line.product.priceCents * line.quantity)}){' '}
                     <button type="button" onClick={() => removeFromCart(line.product.id)}>Remove one</button>
                   </li>
                 ))}
               </ul>
               {quote && (
                 <p>
-                  Subtotal: {formatBbd(quote.subtotalCents)} | Shipping: {formatBbd(quote.shippingCents)} | Total: {formatBbd(quote.totalCents)}
+                  Subtotal: {formatMoney(quote.subtotalCents)} | Shipping: {formatMoney(quote.shippingCents)} | Total: {formatMoney(quote.totalCents)}
                 </p>
               )}
             </div>

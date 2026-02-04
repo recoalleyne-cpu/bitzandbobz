@@ -17,14 +17,14 @@
 }
 
 .row .active {
-  background: #0f172a;
-  color: #fff;
+  background: var(--brand-primary);
+  color: var(--brand-primary-fg);
 }
 
 .panel {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--brand-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--brand-surface);
   padding: 1rem;
   overflow: auto;
 }
@@ -52,7 +52,7 @@ input,
 select,
 textarea {
   padding: 0.5rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--brand-border-strong);
   border-radius: 8px;
 }
 
@@ -74,18 +74,18 @@ th,
 td {
   text-align: left;
   padding: 0.55rem 0.4rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--brand-border);
   vertical-align: top;
 }
 
 .muted {
-  color: #64748b;
+  color: var(--brand-meta-text);
   font-size: 0.85rem;
 }
 
 .status {
   margin: 0;
-  color: #334155;
+  color: var(--brand-text-muted);
 }
 
 .authWrap {
@@ -98,10 +98,10 @@ td {
 .authCard {
   width: 100%;
   max-width: 420px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--brand-border);
   border-radius: 12px;
   padding: 1rem;
-  background: #fff;
+  background: var(--brand-surface);
 }
 
 @media (max-width: 900px) {

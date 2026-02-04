@@ -1,9 +1,24 @@
 :root {
+  --brand-text: #0f172a;
+  --brand-text-muted: #334155;
+  --brand-meta-text: #64748b;
+  --brand-background: radial-gradient(circle at 20% 0%, #fef3c7, #f1f5f9 35%, #e2e8f0 100%);
+  --brand-surface: #ffffff;
+  --brand-border: #e2e8f0;
+  --brand-border-strong: #cbd5e1;
+  --brand-primary: #0f172a;
+  --brand-primary-fg: #ffffff;
+  --brand-button-bg: #f8fafc;
+  --brand-button-hover-border: #94a3b8;
+  --brand-alert-bg: #fef2f2;
+  --brand-alert-border: #fecaca;
+  --brand-alert-text: #7f1d1d;
+
   font-family: "Nunito", "Segoe UI", sans-serif;
   line-height: 1.4;
   font-weight: 400;
-  color: #0f172a;
-  background: radial-gradient(circle at 20% 0%, #fef3c7, #f1f5f9 35%, #e2e8f0 100%);
+  color: var(--brand-text);
+  background: var(--brand-background);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -22,14 +37,14 @@ body {
 
 button {
   border-radius: 8px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--brand-border-strong);
   padding: 0.5rem 0.8rem;
   font-size: 0.95rem;
   font-weight: 600;
-  background-color: #f8fafc;
+  background-color: var(--brand-button-bg);
   cursor: pointer;
 }
 
 button:hover {
-  border-color: #94a3b8;
+  border-color: var(--brand-button-hover-border);
 }

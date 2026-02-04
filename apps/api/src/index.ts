@@ -4,8 +4,16 @@ import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import crypto from "crypto";
-import { PrismaClient, Category, OrderStatus } from "@prisma/client";
+import { PrismaClient, OrderStatus } from "@prisma/client";
 import { z } from "zod";
+import { brand } from "@bitz/config/brand";
+import { catalogCategoryIds } from "@bitz/config/categories";
+import { currency } from "@bitz/config/currency";
+import {
+  calculateShippingCents,
+  getDefaultShippingCountry,
+  isAllowedShippingCountry
+} from "@bitz/config/shipping";
 
 const envCandidates = [
   path.resolve(process.cwd(), ".env"),
@@ -22,7 +30,8 @@ const port = Number(process.env.PORT || 4000);
 const adminPassword = process.env.ADMIN_PASSWORD || "changeme";
 const adminTokenSecret = process.env.ADMIN_JWT_SECRET || "local-dev-secret";
 const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET || "";
-const adminDailySummaryEmail = process.env.ADMIN_DAILY_SUMMARY_EMAIL || "ops@bitzbobz.local";
+const fallbackOpsEmail = `ops@${brand.storeName.toLowerCase().replace(/\s+/g, "")}.local`;
+const adminDailySummaryEmail = process.env.ADMIN_DAILY_SUMMARY_EMAIL || fallbackOpsEmail;
 
 app.use(express.json());
 
@@ -88,10 +97,11 @@ app.use(cors({
   }
 }));
 
-const bbdCurrency = z.literal("BBD");
-const barbadosValues = ["BB", "BRIDGETOWN", "BARBADOS"] as const;
+const defaultShippingCountry = getDefaultShippingCountry();
+const shippingRestrictionMessage = `Shipping is only available in ${defaultShippingCountry.name}.`;
 
-const categorySchema = z.nativeEnum(Category);
+const currencyCodeSchema = z.literal(currency.code);
+const categorySchema = z.enum(catalogCategoryIds);
 const loginSchema = z.object({ password: z.string().min(1) });
 const orderStatusSchema = z.object({ status: z.nativeEnum(OrderStatus) });
 const analyticsEventSchema = z.object({
@@ -105,7 +115,7 @@ const productPayloadSchema = z.object({
   slug: z.string().trim().min(2),
   description: z.string().trim().max(1000).optional().nullable(),
   priceCents: z.number().int().positive(),
-  currency: bbdCurrency.default("BBD"),
+  currency: currencyCodeSchema.default(currency.code),
   category: categorySchema,
   imageUrl: z.string().url().optional().nullable(),
   imageUrls: z.array(z.string().url()).optional(),
@@ -119,13 +129,12 @@ const checkoutLineSchema = z.object({
 });
 
 const checkoutSchema = z.object({
-  currency: bbdCurrency,
+  currency: currencyCodeSchema,
   shippingCountry: z
     .string()
     .trim()
-    .transform((value) => value.toUpperCase())
-    .refine((value) => barbadosValues.includes(value as (typeof barbadosValues)[number]), {
-      message: "Shipping is only available in Barbados."
+    .refine((value) => isAllowedShippingCountry(value), {
+      message: shippingRestrictionMessage
     }),
   items: z.array(checkoutLineSchema).min(1)
 });
@@ -250,17 +259,6 @@ function requireAdminAuth(req: express.Request, res: express.Response, next: exp
   next();
 }
 
-function normalizeShippingCountry(value: string): string {
-  return value.trim().toUpperCase();
-}
-
-function calculateShippingCents(parish?: string | null): number {
-  const highDistanceParishes = new Set(["ST. LUCY", "ST. ANDREW", "ST. JOSEPH"]);
-  if (!parish) return 1200;
-  const normalized = parish.trim().toUpperCase();
-  return highDistanceParishes.has(normalized) ? 1600 : 1200;
-}
-
 async function getCheckoutSummary(items: Array<{ productId: string; quantity: number }>) {
   const productIds = items.map((item) => item.productId);
   const products = await prisma.product.findMany({
@@ -287,7 +285,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.get("/catalog/categories", (_req, res) => {
-  res.json(Object.values(Category));
+  res.json(catalogCategoryIds);
 });
 
 app.get("/catalog/products", async (req, res) => {
@@ -301,7 +299,7 @@ app.get("/catalog/products", async (req, res) => {
       { description: { contains: search, mode: "insensitive" } }
     ];
   }
-  if (category && Object.values(Category).includes(category as Category)) {
+  if (category && catalogCategoryIds.includes(category as (typeof catalogCategoryIds)[number])) {
     whereClause.category = category;
   }
 
@@ -572,8 +570,8 @@ app.post("/checkout/validate", async (req, res) => {
     const { subtotalCents } = await getCheckoutSummary(parsed.data.items);
     return res.json({
       ok: true,
-      currency: "BBD",
-      shippingCountry: "Barbados",
+      currency: currency.code,
+      shippingCountry: defaultShippingCountry.name,
       subtotalCents
     });
   } catch (error) {
@@ -589,7 +587,7 @@ app.post("/checkout/quote", async (req, res) => {
     const { subtotalCents } = await getCheckoutSummary(parsed.data.items);
     const shippingCents = calculateShippingCents(parsed.data.parish || null);
     return res.json({
-      currency: "BBD",
+      currency: currency.code,
       subtotalCents,
       shippingCents,
       totalCents: subtotalCents + shippingCents
@@ -604,9 +602,8 @@ app.post("/checkout/submit", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
   try {
-    const normalizedCountry = normalizeShippingCountry(parsed.data.shippingCountry);
-    if (!barbadosValues.includes(normalizedCountry as (typeof barbadosValues)[number])) {
-      return res.status(400).json({ error: "Shipping is only available in Barbados." });
+    if (!isAllowedShippingCountry(parsed.data.shippingCountry)) {
+      return res.status(400).json({ error: shippingRestrictionMessage });
     }
 
     const { productById, subtotalCents } = await getCheckoutSummary(parsed.data.items);
@@ -622,8 +619,8 @@ app.post("/checkout/submit", async (req, res) => {
           shippingAddress1: parsed.data.shippingAddress,
           shippingAddress2: null,
           parish: parsed.data.parish || null,
-          shippingCountry: "Barbados",
-          currency: "BBD",
+          shippingCountry: defaultShippingCountry.name,
+          currency: currency.code,
           subtotalCents,
           shippingCents,
           totalCents,
@@ -663,7 +660,7 @@ app.post("/checkout/submit", async (req, res) => {
       status: "PAID",
       provider: "SIMULATED",
       amountCents: totalCents,
-      currency: "BBD",
+      currency: currency.code,
       createdAt: new Date().toISOString()
     });
 
@@ -696,7 +693,7 @@ app.post("/checkout/submit", async (req, res) => {
     return res.status(201).json({
       ok: true,
       orderId: order.id,
-      currency: "BBD",
+      currency: currency.code,
       subtotalCents,
       shippingCents,
       totalCents,

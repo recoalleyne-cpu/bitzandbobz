@@ -28,4 +28,5 @@ A terminal-friendly monorepo for a Barbados-first e-commerce product.
 - `docs/HARDENING_CHECKLIST.md`
 - `docs/AUTOMATIONS.md`
 - `docs/PRODUCTIZATION.md`
+- `docs/STARTER_CHECKLIST.md`
 - `docs/MILESTONE3_LAUNCH.md`

@@ -10,6 +10,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@bitz/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       react:
         specifier: ^19.2.0
         version: 19.2.4
@@ -38,6 +41,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@bitz/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@prisma/client':
         specifier: 5.22.0
         version: 5.22.0(prisma@5.22.0)
@@ -72,6 +78,9 @@ importers:
 
   apps/store:
     dependencies:
+      '@bitz/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       react:
         specifier: ^19.2.0
         version: 19.2.4
@@ -115,6 +124,12 @@ importers:
       vite:
         specifier: npm:rolldown-vite@7.2.5
         version: rolldown-vite@7.2.5(@types/node@24.10.10)
+
+  packages/config:
+    devDependencies:
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
 
 packages:
 

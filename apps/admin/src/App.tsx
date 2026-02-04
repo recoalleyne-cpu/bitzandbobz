@@ -1,14 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
+import { brand } from '@bitz/config/brand'
+import { catalogCategories, type CatalogCategoryId } from '@bitz/config/categories'
+import { currency, formatMoney } from '@bitz/config/currency'
 import './App.css'
 
-type Category =
-  | 'CAR_ACCESSORIES'
-  | 'DIY_TOOLS_GADGETS'
-  | 'MENS_ACCESSORIES'
-  | 'PHONE_ACCESSORIES'
-  | 'SPECIAL'
-  | 'WOMENS_ACCESSORIES'
+type Category = CatalogCategoryId
 
 type OrderStatus = 'PENDING' | 'PAID' | 'PACKED' | 'SHIPPED' | 'CANCELLED'
 
@@ -32,7 +29,7 @@ type Order = {
   customerEmail: string | null
   shippingAddress1: string
   parish: string | null
-  currency: 'BBD'
+  currency: string
   totalCents: number
   status: OrderStatus
   payments?: Array<{ status: 'PENDING' | 'PAID' | 'FAILED' }>
@@ -69,14 +66,7 @@ type ProductForm = {
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:4000').replace(/\/+$/, '')
 const TOKEN_KEY = 'bb_admin_token'
 
-const categoryOptions: Category[] = [
-  'CAR_ACCESSORIES',
-  'DIY_TOOLS_GADGETS',
-  'MENS_ACCESSORIES',
-  'PHONE_ACCESSORIES',
-  'SPECIAL',
-  'WOMENS_ACCESSORIES',
-]
+const categoryOptions = catalogCategories
 
 const blankProductForm: ProductForm = {
   title: '',
@@ -88,13 +78,6 @@ const blankProductForm: ProductForm = {
   extraImages: '',
   stockQty: '0',
   active: true,
-}
-
-function formatBbd(cents: number): string {
-  return new Intl.NumberFormat('en-BB', {
-    style: 'currency',
-    currency: 'BBD',
-  }).format(cents / 100)
 }
 
 async function parseErrorMessage(response: Response): Promise<string> {
@@ -267,7 +250,7 @@ function App() {
       slug: productForm.slug.trim(),
       description: productForm.description.trim() || null,
       priceCents: Math.round(price * 100),
-      currency: 'BBD',
+      currency: currency.code,
       category: productForm.category,
       imageUrl: productForm.imageUrl.trim() || null,
       imageUrls,
@@ -360,7 +343,7 @@ function App() {
     return (
       <main className="authWrap">
         <form className="authCard" onSubmit={login}>
-          <h1>Admin Login</h1>
+          <h1>{brand.storeName} Admin</h1>
           <p>Use your admin password to unlock product and order management.</p>
           <label>
             Password
@@ -381,7 +364,7 @@ function App() {
   return (
     <main className="app">
       <header className="hero">
-        <h1>Bitz Bobz Admin</h1>
+        <h1>{brand.storeName} Admin</h1>
         <p className="status">{status}</p>
         <div className="row">
           <button type="button" className={tab === 'products' ? 'active' : ''} onClick={() => setTab('products')}>Products</button>
@@ -399,7 +382,7 @@ function App() {
             <label>Title<input value={productForm.title} onChange={(event) => setProductForm({ ...productForm, title: event.target.value })} required /></label>
             <label>Slug<input value={productForm.slug} onChange={(event) => setProductForm({ ...productForm, slug: event.target.value })} required /></label>
             <label>Description<textarea value={productForm.description} onChange={(event) => setProductForm({ ...productForm, description: event.target.value })} /></label>
-            <label>Price (BBD)<input type="number" min="0.01" step="0.01" value={productForm.priceBbd} onChange={(event) => setProductForm({ ...productForm, priceBbd: event.target.value })} required /></label>
+            <label>Price ({currency.code})<input type="number" min="0.01" step="0.01" value={productForm.priceBbd} onChange={(event) => setProductForm({ ...productForm, priceBbd: event.target.value })} required /></label>
             <label>Main image URL<input value={productForm.imageUrl} onChange={(event) => setProductForm({ ...productForm, imageUrl: event.target.value })} placeholder="https://..." /></label>
             <label>Extra image URLs (one per line)<textarea value={productForm.extraImages} onChange={(event) => setProductForm({ ...productForm, extraImages: event.target.value })} /></label>
             <label>Stock qty<input type="number" min="0" step="1" value={productForm.stockQty} onChange={(event) => setProductForm({ ...productForm, stockQty: event.target.value })} required /></label>
@@ -407,7 +390,7 @@ function App() {
               Category
               <select value={productForm.category} onChange={(event) => setProductForm({ ...productForm, category: event.target.value as Category })}>
                 {categoryOptions.map((category) => (
-                  <option key={category} value={category}>{category}</option>
+                  <option key={category.id} value={category.id}>{category.label}</option>
                 ))}
               </select>
             </label>
@@ -437,7 +420,7 @@ function App() {
                 {products.map((product) => (
                   <tr key={product.id}>
                     <td>{product.title}</td>
-                    <td>{formatBbd(product.priceCents)}</td>
+                    <td>{formatMoney(product.priceCents)}</td>
                     <td>{product.stockQty}</td>
                     <td>{product.active ? 'Active' : 'Inactive'}</td>
                     <td className="row">
@@ -467,15 +450,15 @@ function App() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
-                <tr key={order.id}>
-                  <td>{order.customerName}<br /><span className="muted">{order.shippingAddress1}</span></td>
-                  <td>{order.customerPhone ?? '-'}<br /><span className="muted">{order.customerEmail ?? '-'}</span></td>
-                  <td>{formatBbd(order.totalCents)}</td>
-                  <td>{order.payments?.[0]?.status ?? 'N/A'}</td>
-                  <td>{order.status}</td>
-                  <td>
-                    <select value={order.status} onChange={(event) => void updateOrderStatus(order.id, event.target.value as OrderStatus)} disabled={saving}>
+                {orders.map((order) => (
+                  <tr key={order.id}>
+                    <td>{order.customerName}<br /><span className="muted">{order.shippingAddress1}</span></td>
+                    <td>{order.customerPhone ?? '-'}<br /><span className="muted">{order.customerEmail ?? '-'}</span></td>
+                    <td>{formatMoney(order.totalCents)}</td>
+                    <td>{order.payments?.[0]?.status ?? 'N/A'}</td>
+                    <td>{order.status}</td>
+                    <td>
+                      <select value={order.status} onChange={(event) => void updateOrderStatus(order.id, event.target.value as OrderStatus)} disabled={saving}>
                       <option value="PENDING">PENDING</option>
                       <option value="PAID">PAID</option>
                       <option value="PACKED">PACKED</option>

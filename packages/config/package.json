@@ -1,0 +1,36 @@
+{
+  "name": "@bitz/config",
+  "private": true,
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./brand": {
+      "types": "./dist/brand.d.ts",
+      "default": "./dist/brand.js"
+    },
+    "./categories": {
+      "types": "./dist/categories.d.ts",
+      "default": "./dist/categories.js"
+    },
+    "./currency": {
+      "types": "./dist/currency.d.ts",
+      "default": "./dist/currency.js"
+    },
+    "./shipping": {
+      "types": "./dist/shipping.d.ts",
+      "default": "./dist/shipping.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}
+
