@@ -1,0 +1,20 @@
+[
+  {
+    "id": "43ccdead-79e7-491f-9188-c1f71351d7f1",
+    "orderId": "cml7845ku0001wv92ono91vyf",
+    "status": "PAID",
+    "provider": "SIMULATED",
+    "amountCents": 11100,
+    "currency": "BBD",
+    "createdAt": "2026-02-03T23:22:13.190Z"
+  },
+  {
+    "id": "c4bdab8b-05ca-4fad-bf96-8eaefa170a89",
+    "orderId": "cml7a76pi00012uf4yj8fdfrl",
+    "status": "PAID",
+    "provider": "SIMULATED",
+    "amountCents": 11100,
+    "currency": "BBD",
+    "createdAt": "2026-02-04T00:20:33.860Z"
+  }
+]

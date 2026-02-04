@@ -1,0 +1,127 @@
+[
+  {
+    "id": "52842f47-794d-4746-bad9-fa003d2c5d5d",
+    "eventType": "view_product",
+    "sessionId": "sess_0vdurt4bjykc_1770160789925",
+    "payload": {
+      "productId": "cml7808x60005n4q5en9o67we",
+      "slug": "special-mystery-bundle"
+    },
+    "createdAt": "2026-02-03T23:19:49.945Z"
+  },
+  {
+    "id": "1427e30b-5e75-45b4-b8ac-c9d6a4db3722",
+    "eventType": "filter_category",
+    "sessionId": "sess_lxkpscjf0p_1770160804601",
+    "payload": {
+      "category": "CAR_ACCESSORIES"
+    },
+    "createdAt": "2026-02-03T23:20:04.628Z"
+  },
+  {
+    "id": "76f01f06-57fb-4364-a8ef-28902e11e96c",
+    "eventType": "filter_category",
+    "sessionId": "sess_lxkpscjf0p_1770160804601",
+    "payload": {
+      "category": "DIY_TOOLS_GADGETS"
+    },
+    "createdAt": "2026-02-03T23:20:08.728Z"
+  },
+  {
+    "id": "18ae40b0-af0c-4e81-93f6-891e11b3e32b",
+    "eventType": "filter_category",
+    "sessionId": "sess_lxkpscjf0p_1770160804601",
+    "payload": {
+      "category": "PHONE_ACCESSORIES"
+    },
+    "createdAt": "2026-02-03T23:20:11.806Z"
+  },
+  {
+    "id": "6746db4c-b384-4939-be3c-0b0763f10a35",
+    "eventType": "filter_category",
+    "sessionId": "sess_lxkpscjf0p_1770160804601",
+    "payload": {
+      "category": "WOMENS_ACCESSORIES"
+    },
+    "createdAt": "2026-02-03T23:20:15.631Z"
+  },
+  {
+    "id": "401bdd92-37d3-4396-baaa-99cb88abe830",
+    "eventType": "view_product",
+    "sessionId": "sess_lxkpscjf0p_1770160804601",
+    "payload": {
+      "productId": "cml7808x50004n4q552e867po",
+      "slug": "corduroy-bag-pink"
+    },
+    "createdAt": "2026-02-03T23:20:17.642Z"
+  },
+  {
+    "id": "ee7545aa-b9c3-4235-b9f1-a324ae2c8185",
+    "eventType": "purchase",
+    "sessionId": "order:cml7845ku0001wv92ono91vyf",
+    "payload": {
+      "orderId": "cml7845ku0001wv92ono91vyf",
+      "totalCents": 11100,
+      "itemCount": 1
+    },
+    "createdAt": "2026-02-03T23:22:13.189Z"
+  },
+  {
+    "id": "4ebccb30-5243-439b-9cb7-4166edb93e34",
+    "eventType": "view_product",
+    "sessionId": "smoke",
+    "payload": {
+      "source": "smoke"
+    },
+    "createdAt": "2026-02-03T23:22:13.196Z"
+  },
+  {
+    "id": "cb57ff8b-2a59-4e8e-a32e-465938090993",
+    "eventType": "purchase",
+    "sessionId": "order:cml7a76pi00012uf4yj8fdfrl",
+    "payload": {
+      "orderId": "cml7a76pi00012uf4yj8fdfrl",
+      "totalCents": 11100,
+      "itemCount": 1
+    },
+    "createdAt": "2026-02-04T00:20:33.859Z"
+  },
+  {
+    "id": "c027f584-c591-4e90-b097-0eb66776786d",
+    "eventType": "add_to_cart",
+    "sessionId": "sess_lxkpscjf0p_1770160804601",
+    "payload": {
+      "productId": "cml7808x60005n4q5en9o67we"
+    },
+    "createdAt": "2026-02-04T00:24:31.658Z"
+  },
+  {
+    "id": "e1aaf57b-263b-4d3b-a1d1-e50f1f10f329",
+    "eventType": "view_product",
+    "sessionId": "sess_lxkpscjf0p_1770160804601",
+    "payload": {
+      "productId": "cml7808x60005n4q5en9o67we",
+      "slug": "special-mystery-bundle"
+    },
+    "createdAt": "2026-02-04T00:24:33.928Z"
+  },
+  {
+    "id": "f1f5b43d-1a55-439f-9c50-5cdda3d61bb0",
+    "eventType": "add_to_cart",
+    "sessionId": "sess_lxkpscjf0p_1770160804601",
+    "payload": {
+      "productId": "cml7808x60005n4q5en9o67we"
+    },
+    "createdAt": "2026-02-04T00:24:39.019Z"
+  },
+  {
+    "id": "23498a85-3f09-4823-8ca2-7b5eea07165c",
+    "eventType": "begin_checkout",
+    "sessionId": "sess_lxkpscjf0p_1770160804601",
+    "payload": {
+      "items": 1,
+      "subtotalCents": 9900
+    },
+    "createdAt": "2026-02-04T00:26:41.512Z"
+  }
+]

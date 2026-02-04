@@ -1,0 +1,208 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  color: #12223a;
+  background: linear-gradient(140deg, #f6f4ff, #eef7ff 50%, #fff8f0);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.wrap {
+  max-width: 1040px;
+  padding: 28px 18px;
+  margin: 0 auto;
+}
+
+.shell {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(18, 34, 58, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(18, 34, 58, 0.08);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 18px;
+  border-bottom: 1px solid rgba(18, 34, 58, 0.1);
+  background: rgba(246, 244, 255, 0.6);
+}
+
+.header h1 {
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.header small {
+  opacity: 0.7;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.tabs button {
+  border: 1px solid rgba(18, 34, 58, 0.14);
+  background: rgba(255, 255, 255, 0.8);
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.tabs button.active {
+  background: #12223a;
+  color: #fff;
+  border-color: #12223a;
+}
+
+.main {
+  padding: 18px;
+}
+
+.status {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(18, 34, 58, 0.06);
+  border: 1px solid rgba(18, 34, 58, 0.1);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+@media (min-width: 980px) {
+  .grid {
+    grid-template-columns: 380px 1fr;
+    align-items: start;
+  }
+}
+
+.card {
+  border: 1px solid rgba(18, 34, 58, 0.12);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.card h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.form {
+  display: grid;
+  gap: 10px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid rgba(18, 34, 58, 0.16);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.row button {
+  border: 1px solid rgba(18, 34, 58, 0.14);
+  background: #12223a;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.row button.secondary {
+  background: rgba(255, 255, 255, 0.9);
+  color: #12223a;
+}
+
+.row button.danger {
+  background: #b42318;
+  border-color: #b42318;
+}
+
+.row button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tableWrap {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead th {
+  text-align: left;
+  padding: 10px 10px;
+  border-bottom: 1px solid rgba(18, 34, 58, 0.12);
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 10px 10px;
+  border-bottom: 1px solid rgba(18, 34, 58, 0.08);
+  vertical-align: top;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(18, 34, 58, 0.14);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.badge.off {
+  opacity: 0.6;
+}

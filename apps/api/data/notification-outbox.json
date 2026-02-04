@@ -1,0 +1,28 @@
+[
+  {
+    "id": "cc9a43b9-9bef-49d1-8fae-ad87aaaf8a97",
+    "createdAt": "2026-02-04T00:20:33.860Z",
+    "channel": "email",
+    "to": "smoke@example.com",
+    "subject": "Order Confirmation (cml7a76pi00012uf4yj8fdfrl)",
+    "eventType": "order_confirmation",
+    "payload": {
+      "orderId": "cml7a76pi00012uf4yj8fdfrl",
+      "customerName": "Smoke Buyer",
+      "totalCents": 11100
+    }
+  },
+  {
+    "id": "59685dcc-b968-4b27-8c75-e6d3d84b91d0",
+    "createdAt": "2026-02-04T00:20:33.887Z",
+    "channel": "email",
+    "to": "ops@bitzbobz.local",
+    "subject": "Daily Sales Summary",
+    "eventType": "daily_sales_summary",
+    "payload": {
+      "orderCount": 3,
+      "revenueCents": 28200,
+      "generatedAt": "2026-02-04T00:20:33.887Z"
+    }
+  }
+]

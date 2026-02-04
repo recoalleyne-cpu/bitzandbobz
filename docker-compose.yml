@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: bb_postgres
+    environment:
+      POSTGRES_USER: bb
+      POSTGRES_PASSWORD: bbpass
+      POSTGRES_DB: bbdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - bb_pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: bb_redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  bb_pgdata:

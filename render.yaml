@@ -1,0 +1,69 @@
+services:
+  - type: web
+    name: bitz-bobz-api-staging
+    runtime: node
+    rootDir: apps/api
+    buildCommand: pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PORT
+        value: 4000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bitz-bobz-postgres-staging
+          property: connectionString
+      - key: CORS_ORIGIN_STORE
+        value: https://bitz-bobz-store-staging.vercel.app
+      - key: CORS_ORIGIN_ADMIN
+        value: https://bitz-bobz-admin-staging.vercel.app
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_JWT_SECRET
+        sync: false
+      - key: PAYMENT_WEBHOOK_SECRET
+        sync: false
+      - key: ADMIN_DAILY_SUMMARY_EMAIL
+        sync: false
+
+  - type: web
+    name: bitz-bobz-api-production
+    runtime: node
+    rootDir: apps/api
+    buildCommand: pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm start
+    healthCheckPath: /health
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PORT
+        value: 4000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bitz-bobz-postgres-production
+          property: connectionString
+      - key: CORS_ORIGIN_STORE
+        sync: false
+      - key: CORS_ORIGIN_ADMIN
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_JWT_SECRET
+        sync: false
+      - key: PAYMENT_WEBHOOK_SECRET
+        sync: false
+      - key: ADMIN_DAILY_SUMMARY_EMAIL
+        sync: false
+
+databases:
+  - name: bitz-bobz-postgres-staging
+    databaseName: bbdb_staging
+    user: bb
+
+  - name: bitz-bobz-postgres-production
+    databaseName: bbdb_production
+    user: bb

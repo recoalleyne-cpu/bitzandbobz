@@ -1,0 +1,22 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# env files
+.env
+.env.local
+.env.*.local
+
+# build output
+dist
+build
+.out
+
+# logs
+*.log
+
+# OS
+.DS_Store
+
+# misc
+coverage
