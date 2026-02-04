@@ -1,54 +1,71 @@
 #!/usr/bin/env node
 
-const env = process.argv[2];
-const app = process.argv[3] ?? "all";
+/**
+ * Trigger Vercel Deploy Hooks for Store + Admin
+ * Usage:
+ *   node scripts/deploy/trigger-vercel.mjs staging
+ *   node scripts/deploy/trigger-vercel.mjs production
+ */
 
-if (!env || !["staging", "production"].includes(env)) {
-  console.error("Usage: node scripts/deploy/trigger-vercel.mjs <staging|production> [store|admin|all]");
+const env = process.env;
+
+const mode = (process.argv[2] || "").toLowerCase();
+if (!["staging", "production"].includes(mode)) {
+  console.error(`Usage: node scripts/deploy/trigger-vercel.mjs <staging|production>`);
   process.exit(1);
 }
 
-if (!["store", "admin", "all"].includes(app)) {
-  console.error("Usage: node scripts/deploy/trigger-vercel.mjs <staging|production> [store|admin|all]");
-  process.exit(1);
+const VARS =
+  mode === "staging"
+    ? {
+        store: "VERCEL_DEPLOY_HOOK_STORE_STAGING",
+        admin: "VERCEL_DEPLOY_HOOK_ADMIN_STAGING",
+      }
+    : {
+        store: "VERCEL_DEPLOY_HOOK_STORE_PRODUCTION",
+        admin: "VERCEL_DEPLOY_HOOK_ADMIN_PRODUCTION",
+      };
+
+function getRequired(name) {
+  const v = env[name];
+  if (!v || typeof v !== "string" || !v.trim() || v.trim() === "...") return null;
+  return v.trim();
 }
 
-const envKeySuffix = env === "staging" ? "STAGING" : "PRODUCTION";
-const targets = app === "all" ? ["store", "admin"] : [app];
+const storeHook = getRequired(VARS.store);
+const adminHook = getRequired(VARS.admin);
 
-const hooks = targets.map((target) => {
-  const key = `VERCEL_DEPLOY_HOOK_${target.toUpperCase()}_${envKeySuffix}`;
-  return { target, key, url: process.env[key] };
-});
+const missing = [];
+if (!storeHook) missing.push(VARS.store);
+if (!adminHook) missing.push(VARS.admin);
 
-const missing = hooks.filter((hook) => !hook.url).map((hook) => hook.key);
-if (missing.length > 0) {
+if (missing.length) {
   console.error(`Missing deploy hook env vars: ${missing.join(", ")}`);
   process.exit(1);
 }
 
-
-async function triggerHook({ target, url }) {
-  const response = await fetch(hookUrl, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    triggeredBy: "pnpm deploy script",
-  }),
-});
-;
-  if (!response.ok) {
-    throw new Error(`${target} hook failed: ${response.status}`);
+async function trigger(label, url) {
+  let res;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ triggeredBy: `pnpm deploy (${mode})`, app: label, mode }),
+    });
+  } catch (e) {
+    console.error(`${label} hook network error:`, e?.message || e);
+    process.exit(1);
   }
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    console.error(`${label} hook failed: ${res.status}${text ? `\n${text}` : ""}`);
+    process.exit(1);
+  }
+
+  console.log(`${label} hook triggered OK (${res.status})`);
 }
 
-try {
-  await Promise.all(hooks.map((hook) => triggerHook(hook)));
-  console.log(`Vercel ${env} deploy triggered (${targets.join(", ")}).`);
-} catch (error) {
-  console.error(error instanceof Error ? error.message : "Deploy hook failed.");
-  process.exit(1);
-}
-
+await trigger("store", storeHook);
+await trigger("admin", adminHook);
+console.log(`Done: ${mode}`);
