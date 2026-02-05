@@ -86,6 +86,21 @@ pnpm deploy:vercel:store:staging
 pnpm deploy:vercel:admin:production
 ```
 
+### 2.5 Trigger deploys from GitHub Actions (recommended)
+
+This repo includes a workflow that triggers Vercel Deploy Hooks on pushes to `staging` and `main`:
+
+- `.github/workflows/vercel-deploy-hooks.yml`
+
+In GitHub repo settings, add these **Actions secrets**:
+
+- `VERCEL_DEPLOY_HOOK_STORE_STAGING`
+- `VERCEL_DEPLOY_HOOK_ADMIN_STAGING`
+- `VERCEL_DEPLOY_HOOK_STORE_PRODUCTION`
+- `VERCEL_DEPLOY_HOOK_ADMIN_PRODUCTION`
+
+The workflow also supports manual runs via `workflow_dispatch` (choose `staging|production` and `all|store|admin`).
+
 ## 3) Deploy API (Render blueprint included)
 
 This repo includes `render.yaml` for a staging + production API and Postgres.

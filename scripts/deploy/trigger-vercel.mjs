@@ -3,15 +3,21 @@
 /**
  * Trigger Vercel Deploy Hooks for Store + Admin
  * Usage:
- *   node scripts/deploy/trigger-vercel.mjs staging
- *   node scripts/deploy/trigger-vercel.mjs production
+ *   node scripts/deploy/trigger-vercel.mjs staging [all|store|admin]
+ *   node scripts/deploy/trigger-vercel.mjs production [all|store|admin]
  */
 
 const env = process.env;
 
 const mode = (process.argv[2] || "").toLowerCase();
 if (!["staging", "production"].includes(mode)) {
-  console.error(`Usage: node scripts/deploy/trigger-vercel.mjs <staging|production>`);
+  console.error(`Usage: node scripts/deploy/trigger-vercel.mjs <staging|production> [all|store|admin]`);
+  process.exit(1);
+}
+
+const app = (process.argv[3] || "all").toLowerCase();
+if (!["all", "store", "admin"].includes(app)) {
+  console.error(`Usage: node scripts/deploy/trigger-vercel.mjs <staging|production> [all|store|admin]`);
   process.exit(1);
 }
 
@@ -36,8 +42,8 @@ const storeHook = getRequired(VARS.store);
 const adminHook = getRequired(VARS.admin);
 
 const missing = [];
-if (!storeHook) missing.push(VARS.store);
-if (!adminHook) missing.push(VARS.admin);
+if ((app === "all" || app === "store") && !storeHook) missing.push(VARS.store);
+if ((app === "all" || app === "admin") && !adminHook) missing.push(VARS.admin);
 
 if (missing.length) {
   console.error(`Missing deploy hook env vars: ${missing.join(", ")}`);
@@ -66,6 +72,10 @@ async function trigger(label, url) {
   console.log(`${label} hook triggered OK (${res.status})`);
 }
 
-await trigger("store", storeHook);
-await trigger("admin", adminHook);
+if (app === "all" || app === "store") {
+  await trigger("store", storeHook);
+}
+if (app === "all" || app === "admin") {
+  await trigger("admin", adminHook);
+}
 console.log(`Done: ${mode}`);

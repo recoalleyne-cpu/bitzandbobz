@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "predev": "pnpm --filter @bitz/config build",
-    "prebuild": "pnpm --filter @bitz/config build",
+    "predev": "pnpm --dir ../.. --filter @bitz/config build",
+    "prebuild": "pnpm --dir ../.. --filter @bitz/config build",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

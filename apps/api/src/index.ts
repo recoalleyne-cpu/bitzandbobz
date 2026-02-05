@@ -1,4 +1,5 @@
 import express from "express";
+import adminImport from "./routes/adminImport";
 import cors from "cors";
 import fs from "fs";
 import path from "path";
@@ -26,6 +27,7 @@ else dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
+app.locals.prisma = prisma;
 const port = Number(process.env.PORT || 4000);
 const adminPassword = process.env.ADMIN_PASSWORD || "changeme";
 const adminTokenSecret = process.env.ADMIN_JWT_SECRET || "local-dev-secret";
@@ -215,6 +217,7 @@ const adminRateLimiter = createRateLimiter(120, 60_000);
 app.use("/admin/login", authRateLimiter);
 app.use("/admin", adminRateLimiter);
 app.use("/checkout", checkoutRateLimiter);
+app.use("/admin/import", requireAdminAuth, adminImport);
 
 function base64UrlEncode(input: string): string {
   return Buffer.from(input).toString("base64url");

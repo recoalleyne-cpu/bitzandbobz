@@ -1,0 +1,66 @@
+name: Deploy (Vercel hooks)
+
+on:
+  push:
+    branches:
+      - staging
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        type: choice
+        required: true
+        default: staging
+        options:
+          - staging
+          - production
+      app:
+        description: "Which app to deploy"
+        type: choice
+        required: true
+        default: all
+        options:
+          - all
+          - store
+          - admin
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel-deploy-hooks-${{ github.ref_name }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Trigger Vercel deploy hooks
+        env:
+          VERCEL_DEPLOY_HOOK_STORE_STAGING: ${{ secrets.VERCEL_DEPLOY_HOOK_STORE_STAGING }}
+          VERCEL_DEPLOY_HOOK_ADMIN_STAGING: ${{ secrets.VERCEL_DEPLOY_HOOK_ADMIN_STAGING }}
+          VERCEL_DEPLOY_HOOK_STORE_PRODUCTION: ${{ secrets.VERCEL_DEPLOY_HOOK_STORE_PRODUCTION }}
+          VERCEL_DEPLOY_HOOK_ADMIN_PRODUCTION: ${{ secrets.VERCEL_DEPLOY_HOOK_ADMIN_PRODUCTION }}
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            node scripts/deploy/trigger-vercel.mjs "${{ inputs.environment }}" "${{ inputs.app }}"
+            exit 0
+          fi
+
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            node scripts/deploy/trigger-vercel.mjs production
+            exit 0
+          fi
+
+          node scripts/deploy/trigger-vercel.mjs staging
+
