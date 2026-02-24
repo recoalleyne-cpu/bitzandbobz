@@ -36,6 +36,7 @@ const envSchema = z.object({
     CORS_ALLOW_VERCEL_PREVIEW: z.string().optional().default("false"),
     CORS_ALLOWED_VERCEL_PROJECTS: z.string().optional().default(""),
     ADMIN_API_KEY: z.string().optional(),
+    GEMINI_API_KEY: z.string().min(1, "GEMINI_API_KEY is required for AI features"),
 });
 
 /**

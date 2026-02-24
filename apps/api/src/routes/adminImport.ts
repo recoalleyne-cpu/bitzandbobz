@@ -7,6 +7,7 @@ import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import { catalogCategories, catalogCategoryIds } from "@bitz/config/categories";
 import { currency } from "@bitz/config/currency";
+import { gemini } from "../utils/gemini";
 
 const router = express.Router();
 
@@ -72,6 +73,35 @@ function normalizeCategoryId(input: string): CatalogCategoryId {
   return "SPECIAL";
 }
 
+/**
+ * Smart Category Suggester using Gemini
+ */
+async function suggestCategory(categoryInput: string, title: string, description: string): Promise<CatalogCategoryId | null> {
+  try {
+    const prompt = `
+Given an e-commerce product, map it to the most relevant category from the list below.
+Available Categories:
+${catalogCategories.map(c => `- ${c.id}: ${c.label}`).join("\n")}
+
+Product Title: ${title}
+Product Description: ${description}
+Input Category Hint: ${categoryInput}
+
+Return ONLY the category ID (e.g., MENS_ACCESSORIES) or "SPECIAL" if it doesn't fit well. Do not include any other text.
+`;
+    const suggestion = await gemini.generateContent(prompt, { maxRetries: 2 });
+    const trimmed = suggestion.trim().toUpperCase() as CatalogCategoryId;
+
+    if (catalogCategoryIds.includes(trimmed)) {
+      return trimmed;
+    }
+    return null;
+  } catch (e) {
+    console.error("AI Category suggestion failed:", e);
+    return null;
+  }
+}
+
 function pick(row: Record<string, any>, keys: string[]) {
   for (const k of keys) {
     const val = row[k];
@@ -122,6 +152,10 @@ function parseImageUrls(value: string): string[] {
     .split(/[,|\n]/g)
     .map((part) => part.trim())
     .filter(Boolean);
+}
+
+function encodeImageUrls(urls: string[]): string {
+  return JSON.stringify(urls || []);
 }
 
 const RowSchema = z.object({
@@ -175,7 +209,15 @@ router.post(
           NaN;
 
         const categoryRaw = String(pick(r, ["category", "Categories", "Category"])).trim();
-        const category = normalizeCategoryId(categoryRaw);
+        let category = normalizeCategoryId(categoryRaw);
+
+        // If manual mapping failed (returned SPECIAL) and we have a hint or title, try AI
+        if (category === "SPECIAL" && (categoryRaw || title)) {
+          const aiSuggestion = await suggestCategory(categoryRaw, title, description);
+          if (aiSuggestion) {
+            category = aiSuggestion;
+          }
+        }
 
         const imagesRaw = String(pick(r, ["imageUrls", "Images", "images"])).trim();
         const imageUrls = parseImageUrls(imagesRaw);
@@ -229,7 +271,7 @@ router.post(
                 currency: currency.code,
                 category: data.category,
                 imageUrl: data.imageUrl,
-                imageUrls: data.imageUrls,
+                imageUrls: encodeImageUrls(data.imageUrls),
                 stockQty: data.stockQty,
                 active: data.active,
               },
@@ -245,7 +287,7 @@ router.post(
                 currency: currency.code,
                 category: data.category,
                 imageUrl: data.imageUrl,
-                imageUrls: data.imageUrls,
+                imageUrls: encodeImageUrls(data.imageUrls),
                 stockQty: data.stockQty,
                 active: data.active,
               },

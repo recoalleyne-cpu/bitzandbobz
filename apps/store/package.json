@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@bitz/config": "workspace:*",
+    "firebase": "^11.10.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

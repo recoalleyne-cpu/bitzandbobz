@@ -18,6 +18,11 @@
     "deploy:vercel:store:staging": "node scripts/deploy/trigger-vercel.mjs staging store",
     "deploy:vercel:store:production": "node scripts/deploy/trigger-vercel.mjs production store",
     "deploy:vercel:admin:staging": "node scripts/deploy/trigger-vercel.mjs staging admin",
-    "deploy:vercel:admin:production": "node scripts/deploy/trigger-vercel.mjs production admin"
+    "deploy:vercel:admin:production": "node scripts/deploy/trigger-vercel.mjs production admin",
+    "deploy:hosting:store": "firebase deploy --only hosting:store",
+    "deploy:hosting:admin": "firebase deploy --only hosting:admin",
+    "deploy:hosting:all": "firebase deploy --only hosting",
+    "build:hosting": "pnpm --filter store build && pnpm --filter admin build",
+    "dev:emulators": "firebase emulators:start --only hosting,auth"
   }
 }

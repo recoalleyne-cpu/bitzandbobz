@@ -3,13 +3,13 @@
     "default": "bitzxbobz"
   },
   "targets": {
-    "bitzxbobz": {
+    "bitz-bobz-prod": {
       "hosting": {
         "store": [
-          "bitzxbobz-store"
+          "bitz-bobz-store"
         ],
         "admin": [
-          "bitzxbobz-admin"
+          "bitz-bobz-admin"
         ]
       }
     }

@@ -1,34 +1,28 @@
 {
-    "hosting": [
-        {
-            "target": "store",
-            "public": "apps/store/dist",
-            "ignore": [
-                "firebase.json",
-                "**/.*",
-                "**/node_modules/**"
-            ],
-            "rewrites": [
-                {
-                    "source": "**",
-                    "destination": "/index.html"
-                }
-            ]
-        },
-        {
-            "target": "admin",
-            "public": "apps/admin/dist",
-            "ignore": [
-                "firebase.json",
-                "**/.*",
-                "**/node_modules/**"
-            ],
-            "rewrites": [
-                {
-                    "source": "**",
-                    "destination": "/index.html"
-                }
-            ]
-        }
+  "hosting": {
+    "public": "apps/store/dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
     ]
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "hosting": {
+      "port": 5002
+    },
+    "ui": {
+      "enabled": true
+    },
+    "singleProjectMode": true
+  }
 }
