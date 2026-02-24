@@ -264,8 +264,7 @@ function App() {
   return (
     <main className="app">
       <header className="hero">
-        <h1>{brand.storeName}</h1>
-        <p>{brand.tagline}</p>
+        <h1>{brand.name}</h1>
         <nav className="tabs">
           <button type="button" className={view === 'catalog' ? 'active' : ''} onClick={() => setView('catalog')}>Catalog</button>
           <button type="button" className={view === 'checkout' ? 'active' : ''} onClick={() => setView('checkout')}>Checkout ({cartItems.length})</button>
