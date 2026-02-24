@@ -1,14 +1,19 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { brand, brandCssVars } from '@bitz/config/brand'
+import { brand } from '@bitz/config/brand'
 import './index.css'
 import App from './App.tsx'
 
-for (const [key, value] of Object.entries(brandCssVars)) {
-  document.documentElement.style.setProperty(key, value)
+const cssVars = {
+  '--brand-primary': brand.primaryColor,
+  '--brand-secondary': brand.secondaryColor,
+} as const
+
+for (const [key, value] of Object.entries(cssVars)) {
+  document.documentElement.style.setProperty(key, String(value))
 }
 
-document.title = brand.storeName
+document.title = brand.name
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
