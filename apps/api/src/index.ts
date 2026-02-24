@@ -16,24 +16,53 @@ import {
   isAllowedShippingCountry
 } from "@bitz/config/shipping";
 
-const envCandidates = [
-  path.resolve(process.cwd(), ".env"),
-  path.resolve(__dirname, "../.env"),
-  path.resolve(__dirname, "../../.env")
-];
-const envPath = envCandidates.find((candidate) => fs.existsSync(candidate));
-if (envPath) dotenv.config({ path: envPath });
-else dotenv.config();
+import { env } from "./config/env";
+
+/**
+ * Simple JWT-like token implementation for admin auth
+ * Format: base64(payload).base64(signature)
+ */
+function signAdminToken(): string {
+  const payload = JSON.stringify({ admin: true, exp: Date.now() + 24 * 60 * 60 * 1000 });
+  const b64Payload = Buffer.from(payload).toString("base64");
+  const signature = crypto
+    .createHmac("sha256", env.ADMIN_JWT_SECRET)
+    .update(b64Payload)
+    .digest("hex");
+  return `${b64Payload}.${signature}`;
+}
+
+function verifyAdminToken(token: string): boolean {
+  try {
+    const [b64Payload, signature] = token.split(".");
+    if (!b64Payload || !signature) return false;
+
+    const expectedSignature = crypto
+      .createHmac("sha256", env.ADMIN_JWT_SECRET)
+      .update(b64Payload)
+      .digest("hex");
+
+    if (signature !== expectedSignature) return false;
+
+    const payload = JSON.parse(Buffer.from(b64Payload, "base64").toString());
+    return payload.admin === true && payload.exp > Date.now();
+  } catch {
+    return false;
+  }
+}
 
 const app = express();
 const prisma = new PrismaClient();
 app.locals.prisma = prisma;
-const port = Number(process.env.PORT || 4000);
-const adminPassword = process.env.ADMIN_PASSWORD || "changeme";
-const adminTokenSecret = process.env.ADMIN_JWT_SECRET || "local-dev-secret";
-const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET || "";
-const fallbackOpsEmail = `ops@${brand.storeName.toLowerCase().replace(/\s+/g, "")}.local`;
-const adminDailySummaryEmail = process.env.ADMIN_DAILY_SUMMARY_EMAIL || fallbackOpsEmail;
+const port = env.PORT;
+const adminPassword = env.ADMIN_PASSWORD;
+const adminTokenSecret = env.ADMIN_JWT_SECRET;
+const webhookSecret = env.PAYMENT_WEBHOOK_SECRET;
+
+// Fix: brand.storeName was undefined. Using brand.name which exists in the config package.
+const storeNameSlug = (brand.name || "bitz-and-bobz").toLowerCase().replace(/\s+/g, "");
+const fallbackOpsEmail = `ops@${storeNameSlug}.local`;
+const adminDailySummaryEmail = env.ADMIN_DAILY_SUMMARY_EMAIL || fallbackOpsEmail;
 
 app.use(express.json());
 
@@ -73,17 +102,17 @@ const allowedOrigins = new Set(
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
-    process.env.CORS_ORIGIN_STORE,
-    process.env.CORS_ORIGIN_ADMIN,
-    ...parseCsvEnv(process.env.CORS_ORIGINS),
+    env.CORS_ORIGIN_STORE,
+    env.CORS_ORIGIN_ADMIN,
+    ...parseCsvEnv(env.CORS_ORIGINS),
   ].filter((origin): origin is string => Boolean(origin))
 );
 
 const allowVercelPreviewOrigins =
-  isTruthy(process.env.CORS_ALLOW_VERCEL_PREVIEW) ||
-  parseCsvEnv(process.env.CORS_ALLOWED_VERCEL_PROJECTS).length > 0;
+  isTruthy(env.CORS_ALLOW_VERCEL_PREVIEW) ||
+  parseCsvEnv(env.CORS_ALLOWED_VERCEL_PROJECTS).length > 0;
 
-const allowedVercelProjects = parseCsvEnv(process.env.CORS_ALLOWED_VERCEL_PROJECTS).map((project) => project.toLowerCase());
+const allowedVercelProjects = parseCsvEnv(env.CORS_ALLOWED_VERCEL_PROJECTS).map((project) => project.toLowerCase());
 
 app.use(cors({
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
@@ -159,7 +188,7 @@ function requireAdminAuth(req: express.Request, res: express.Response, next: exp
   }
 
   // 1) Accept static ADMIN_API_KEY if configured (great for imports)
-  const staticKey = (process.env.ADMIN_API_KEY || "").trim();
+  const staticKey = (env.ADMIN_API_KEY || "").trim();
   if (staticKey && got === staticKey) {
     return next();
   }
@@ -404,7 +433,7 @@ app.put("/admin/products/:id", requireAdminAuth, async (req, res) => {
       where: { id: idCheck.data.id },
       data: {
         ...parsed.data,
-        ...(parsed.data.imageUrls ? { imageUrls: encodeImageUrls(parsed.data.imageUrls) } : {})
+        imageUrls: parsed.data.imageUrls ? encodeImageUrls(parsed.data.imageUrls) : undefined
       }
     });
     return res.json(updated);

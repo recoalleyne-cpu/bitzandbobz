@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "default": "bitzxbobz"
+  },
+  "targets": {
+    "bitzxbobz": {
+      "hosting": {
+        "store": [
+          "bitzxbobz-store"
+        ],
+        "admin": [
+          "bitzxbobz-admin"
+        ]
+      }
+    }
+  }
+}
