@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -14,20 +14,24 @@ model Product {
   description String?
   priceCents  Int
   currency    String   @default("BBD")
-  category    Category
+
+  // SQLite-friendly: store category as string (validated in API)
+  category    String
+
   imageUrl    String?
-  imageUrls   String[] @default([])
+  // SQLite can't store String[]; store JSON string like ["url1","url2"]
+  imageUrls   String   @default("[]")
   stockQty    Int      @default(0)
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  orderItems OrderItem[]
+  orderItems  OrderItem[]
 }
 
 model Order {
   id               String      @id @default(cuid())
-  status           OrderStatus @default(PENDING)
+  status           String      @default("PENDING")
   currency         String      @default("BBD")
   subtotalCents    Int
   shippingCents    Int
@@ -45,33 +49,16 @@ model Order {
 }
 
 model OrderItem {
-  id            String   @id @default(cuid())
-  orderId       String
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId     String
-  product       Product  @relation(fields: [productId], references: [id])
-  quantity      Int
+  id             String   @id @default(cuid())
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id])
+  quantity       Int
   unitPriceCents Int
-  titleSnapshot String
-  createdAt     DateTime @default(now())
+  titleSnapshot  String
+  createdAt      DateTime @default(now())
 
   @@index([orderId])
   @@index([productId])
-}
-
-enum OrderStatus {
-  PENDING
-  PAID
-  PACKED
-  SHIPPED
-  CANCELLED
-}
-
-enum Category {
-  CAR_ACCESSORIES
-  DIY_TOOLS_GADGETS
-  MENS_ACCESSORIES
-  PHONE_ACCESSORIES
-  SPECIAL
-  WOMENS_ACCESSORIES
 }

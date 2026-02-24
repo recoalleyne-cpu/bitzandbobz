@@ -5,7 +5,7 @@ import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import crypto from "crypto";
-import { PrismaClient, OrderStatus } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { brand } from "@bitz/config/brand";
 import { catalogCategoryIds } from "@bitz/config/categories";
@@ -36,6 +36,23 @@ const fallbackOpsEmail = `ops@${brand.storeName.toLowerCase().replace(/\s+/g, ""
 const adminDailySummaryEmail = process.env.ADMIN_DAILY_SUMMARY_EMAIL || fallbackOpsEmail;
 
 app.use(express.json());
+
+function encodeImageUrls(urls: unknown): string {
+  if (Array.isArray(urls)) return JSON.stringify(urls);
+  if (typeof urls === "string" && urls.trim().startsWith("[")) return urls; // already JSON
+  return "[]";
+}
+
+function decodeImageUrls(value: unknown): string[] {
+  if (Array.isArray(value)) return value as string[];
+  if (typeof value !== "string") return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
 
 function parseCsvEnv(value: string | undefined): string[] {
   if (!value) return [];
@@ -105,7 +122,9 @@ const shippingRestrictionMessage = `Shipping is only available in ${defaultShipp
 const currencyCodeSchema = z.literal(currency.code);
 const categorySchema = z.enum(catalogCategoryIds);
 const loginSchema = z.object({ password: z.string().min(1) });
-const orderStatusSchema = z.object({ status: z.nativeEnum(OrderStatus) });
+const orderStatusSchema = z.object({
+  status: z.enum(["PENDING", "PAID", "PACKED", "SHIPPED", "CANCELLED"])
+});
 const analyticsEventSchema = z.object({
   eventType: z.string().trim().min(2).max(64),
   sessionId: z.string().trim().min(2).max(128),
@@ -124,6 +143,34 @@ const productPayloadSchema = z.object({
   stockQty: z.number().int().nonnegative(),
   active: z.boolean().optional()
 });
+function requireAdminAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const authHeader = req.header("authorization") || "";
+  const bearer = authHeader.toLowerCase().startsWith("bearer ")
+    ? authHeader.slice(7).trim()
+    : "";
+
+  // Optional: also allow x-admin-key for curl/admin tools
+  const xKey = (req.header("x-admin-key") || "").trim();
+
+  const got = bearer || xKey;
+
+  if (!got) {
+    return res.status(401).json({ error: "Missing admin token." });
+  }
+
+  // 1) Accept static ADMIN_API_KEY if configured (great for imports)
+  const staticKey = (process.env.ADMIN_API_KEY || "").trim();
+  if (staticKey && got === staticKey) {
+    return next();
+  }
+
+  // 2) Otherwise fall back to the existing signed token mechanism
+  if (!verifyAdminToken(got)) {
+    return res.status(401).json({ error: "Invalid or expired admin token." });
+  }
+
+  return next();
+}
 
 const checkoutLineSchema = z.object({
   productId: z.string().min(1),
@@ -213,54 +260,12 @@ function createRateLimiter(limit: number, windowMs: number) {
 const authRateLimiter = createRateLimiter(15, 60_000);
 const checkoutRateLimiter = createRateLimiter(60, 60_000);
 const adminRateLimiter = createRateLimiter(120, 60_000);
-
 app.use("/admin/login", authRateLimiter);
 app.use("/admin", adminRateLimiter);
 app.use("/checkout", checkoutRateLimiter);
+
+//  Mount CSV importer
 app.use("/admin/import", requireAdminAuth, adminImport);
-
-function base64UrlEncode(input: string): string {
-  return Buffer.from(input).toString("base64url");
-}
-
-function signAdminToken(): string {
-  const expiresAt = Date.now() + (1000 * 60 * 60 * 24 * 7);
-  const payload = base64UrlEncode(JSON.stringify({ role: "admin", expiresAt }));
-  const signature = crypto.createHmac("sha256", adminTokenSecret).update(payload).digest("base64url");
-  return `${payload}.${signature}`;
-}
-
-function verifyAdminToken(token: string): boolean {
-  const [payload, signature] = token.split(".");
-  if (!payload || !signature) return false;
-
-  const expected = crypto.createHmac("sha256", adminTokenSecret).update(payload).digest("base64url");
-  if (signature.length !== expected.length) return false;
-
-  const validSignature = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
-  if (!validSignature) return false;
-
-  try {
-    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { role?: string; expiresAt?: number };
-    return data.role === "admin" && typeof data.expiresAt === "number" && Date.now() < data.expiresAt;
-  } catch {
-    return false;
-  }
-}
-
-function requireAdminAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
-  const authHeader = req.header("authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Missing admin token." });
-  }
-
-  const token = authHeader.slice("Bearer ".length);
-  if (!verifyAdminToken(token)) {
-    return res.status(401).json({ error: "Invalid or expired admin token." });
-  }
-
-  next();
-}
 
 async function getCheckoutSummary(items: Array<{ productId: string; quantity: number }>) {
   const productIds = items.map((item) => item.productId);
@@ -310,7 +315,12 @@ app.get("/catalog/products", async (req, res) => {
     where: whereClause,
     orderBy: { createdAt: "desc" }
   });
-  res.json(products);
+  res.json(
+    products.map((p) => ({
+      ...p,
+      imageUrls: decodeImageUrls((p as any).imageUrls)
+    }))
+  );
 });
 
 app.get("/catalog/products/:slug", async (req, res) => {
@@ -328,7 +338,10 @@ app.get("/catalog/products/:slug", async (req, res) => {
     orderBy: { createdAt: "desc" }
   });
 
-  return res.json({ product, related });
+  return res.json({
+    product: { ...product, imageUrls: decodeImageUrls((product as any).imageUrls) },
+    related: related.map((p) => ({ ...p, imageUrls: decodeImageUrls((p as any).imageUrls) }))
+  });
 });
 
 app.post("/analytics/events", async (req, res) => {
@@ -370,7 +383,12 @@ app.post("/admin/products", requireAdminAuth, async (req, res) => {
   const parsed = productPayloadSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
-  const created = await prisma.product.create({ data: parsed.data });
+  const created = await prisma.product.create({
+    data: {
+      ...parsed.data,
+      imageUrls: encodeImageUrls(parsed.data.imageUrls)
+    }
+  });
   return res.status(201).json(created);
 });
 
@@ -384,7 +402,10 @@ app.put("/admin/products/:id", requireAdminAuth, async (req, res) => {
   try {
     const updated = await prisma.product.update({
       where: { id: idCheck.data.id },
-      data: parsed.data
+      data: {
+        ...parsed.data,
+        ...(parsed.data.imageUrls ? { imageUrls: encodeImageUrls(parsed.data.imageUrls) } : {})
+      }
     });
     return res.json(updated);
   } catch {

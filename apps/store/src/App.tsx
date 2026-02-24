@@ -34,7 +34,7 @@ type CheckoutForm = {
   parish: string
 }
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:4000').replace(/\/+$/, '')
+const API_BASE = `${window.location.origin}/wp-json/bitz/v1`
 const SESSION_KEY = 'bb_store_session_id'
 const CART_KEY = 'bb_store_cart'
 const DEFAULT_SHIPPING_COUNTRY = getDefaultShippingCountry()
